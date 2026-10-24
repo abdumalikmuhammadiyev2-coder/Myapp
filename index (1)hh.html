@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Gift Game</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: #0f0f14; --surface: #1a1a22; --surface-2: #23232d; --border: #2e2e3a;
+    --primary: #a855f7; --primary-2: #7c6ff0; --green: #22c55e; --red: #ef4444;
+    --text: #fff; --dim: #8b8b9a; --radius: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; min-height: 100vh; padding-bottom: 84px; }
+
+  .top { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border); display: grid; place-items: center; font-weight: 700; }
+  .bal { flex: 1; }
+  .bal small { color: var(--dim); font-size: 12px; display: block; }
+  .bal b { font-size: 20px; }
+  .btn { background: var(--primary-2); color: #fff; border: 0; padding: 10px 16px; border-radius: 12px; font-weight: 600; font-size: 14px; }
+
+  .page { display: none; padding: 16px; }
+  .page.active { display: block; }
+  h2 { margin-bottom: 12px; font-size: 18px; }
+
+  .card { border-radius: var(--radius); padding: 22px 18px; margin-bottom: 12px; font-size: 22px; font-weight: 800; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+  .card span { font-size: 12px; font-weight: 600; background: rgba(0,0,0,.3); padding: 4px 10px; border-radius: 20px; }
+  .c0 { background: linear-gradient(135deg, #22c55e, #0ea5e9); }
+  .c1 { background: linear-gradient(135deg, #38bdf8, #6366f1); opacity: .7; }
+  .c2 { background: linear-gradient(135deg, #f59e0b, #ef4444); opacity: .7; }
+  .c3 { background: linear-gradient(135deg, #7c3aed, #db2777); opacity: .7; }
+  .box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; color: var(--dim); text-align: center; }
+
+  /* Dice */
+  .back { background: none; border: 0; color: var(--dim); font-size: 15px; margin-bottom: 10px; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+  .result { text-align: center; font-size: 52px; font-weight: 800; padding: 10px 0 2px; letter-spacing: 1px; }
+  .result.win { color: var(--green); }
+  .result.lose { color: var(--red); }
+  .msg { text-align: center; color: var(--dim); min-height: 20px; font-size: 14px; margin-bottom: 8px; }
+  .scale { display: flex; justify-content: space-between; color: var(--dim); font-size: 12px; margin-bottom: 6px; }
+  input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 14px; border-radius: 8px; outline: none; background: linear-gradient(90deg, var(--red) 50%, var(--green) 50%); }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; border-radius: 50%; background: #fff; border: 5px solid var(--primary-2); }
+  input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 5px solid var(--primary-2); }
+  .row { display: flex; gap: 10px; }
+  .field { flex: 1; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; }
+  .field small { color: var(--dim); font-size: 12px; display: block; margin-bottom: 2px; }
+  .field b { font-size: 18px; }
+  .seg { display: flex; background: var(--surface-2); border-radius: 12px; padding: 4px; margin-bottom: 12px; }
+  .seg button { flex: 1; background: none; border: 0; color: var(--dim); padding: 10px; border-radius: 9px; font-weight: 600; font-size: 14px; }
+  .seg button.on { background: var(--primary-2); color: #fff; }
+  .bet { display: flex; gap: 8px; margin-bottom: 12px; }
+  .bet input { flex: 1; min-width: 0; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 12px; color: #fff; font-size: 18px; font-weight: 600; }
+  .bet button { background: var(--surface-2); border: 1px solid var(--border); color: #fff; border-radius: 12px; padding: 0 14px; font-weight: 700; }
+  .go { width: 100%; background: var(--primary); color: #fff; border: 0; border-radius: 14px; padding: 16px; font-size: 17px; font-weight: 700; }
+  .go:disabled { opacity: .5; }
+
+  nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: var(--surface); border-top: 1px solid var(--border); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); z-index: 10; }
+  nav button { flex: 1; background: none; border: 0; color: var(--dim); font-size: 11px; padding: 8px 0; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  nav button i { font-style: normal; font-size: 20px; }
+  nav button.active { color: #fff; background: var(--primary-2); }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="avatar" id="avatar">D</div>
+  <div class="bal"><small>Balans (test)</small><b id="balance">1000.00</b></div>
+  <button class="btn" id="reset">Qayta</button>
+</div>
+
+<div id="home" class="page active">
+  <h2 id="hello">Salom!</h2>
+  <div class="card c0" id="openDice">DICE <span>o'ynash</span></div>
+  <div class="card c1">ROCKET <span>tez orada</span></div>
+  <div class="card c2">PVP <span>tez orada</span></div>
+  <div class="card c3">PLINKO <span>tez orada</span></div>
+</div>
+
+<div id="dice" class="page">
+  <button class="back" id="backHome">← Orqaga</button>
+  <div class="panel">
+    <div class="result" id="roll">--.--</div>
+    <div class="msg" id="msg">Tikish qo'ying va o'ynang</div>
+    <div class="scale"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+    <input type="range" id="target" min="2" max="98" step="1" value="50">
+  </div>
+  <div class="panel">
+    <div class="seg">
+      <button id="modeHigher" class="on">Yuqori (&ge;)</button>
+      <button id="modeLower">Quyi (&lt;)</button>
+    </div>
+    <div class="row">
+      <div class="field"><small>Ko'paytirgich</small><b id="mult">1.96x</b></div>
+      <div class="field"><small id="targetLabel">Son &ge;</small><b id="targetVal">50</b></div>
+      <div class="field"><small>Yutish ehtimoli</small><b id="chance">50%</b></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="bet">
+      <input type="number" id="amount" value="10" min="1" inputmode="decimal">
+      <button id="half">&frac12;</button>
+      <button id="double">2x</button>
+    </div>
+    <button class="go" id="play">Tikish</button>
+  </div>
+</div>
+
+<div id="backpack" class="page"><h2>Backpack</h2><div class="box">Hozircha bo'sh</div></div>
+<div id="invite" class="page"><h2>Do'stlarni taklif qilish</h2><div class="box">Referal tizimi keyinroq</div></div>
+<div id="leaderboard" class="page"><h2>Reyting</h2><div class="box">Hozircha o'yinchilar yo'q</div></div>
+<div id="p2p" class="page"><h2>P2P</h2><div class="box">Takliflar yo'q</div></div>
+
+<nav>
+  <button data-p="backpack"><i>🎒</i>Backpack</button>
+  <button data-p="invite"><i>👥</i>Invite</button>
+  <button data-p="home" class="active"><i>🏠</i>Home</button>
+  <button data-p="leaderboard"><i>🏆</i>Reyting</button>
+  <button data-p="p2p"><i>🔁</i>P2P</button>
+</nav>
+
+<script>
+  var tg = window.Telegram && window.Telegram.WebApp;
+  if (tg) {
+    tg.ready(); tg.expand();
+    try { tg.setHeaderColor('#1a1a22'); tg.setBackgroundColor('#0f0f14'); } catch (e) {}
+    var u = tg.initDataUnsafe && tg.initDataUnsafe.user;
+    if (u) {
+      document.getElementById('hello').textContent = 'Salom, ' + u.first_name + '!';
+      document.getElementById('avatar').textContent = (u.first_name || 'D')[0].toUpperCase();
+    }
+  }
+  function haptic(kind) {
+    try { tg.HapticFeedback.notificationOccurred(kind); } catch (e) {}
+  }
+
+  // ---- Sahifalar ----
+  function show(id) {
+    document.querySelectorAll('.page').forEach(function (p) { p.classList.remove('active'); });
+    document.getElementById(id).classList.add('active');
+  }
+  document.querySelectorAll('nav button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      show(b.dataset.p);
+      document.querySelectorAll('nav button').forEach(function (x) { x.classList.remove('active'); });
+      b.classList.add('active');
+    });
+  });
+  document.getElementById('openDice').onclick = function () { show('dice'); };
+  document.getElementById('backHome').onclick = function () { show('home'); };
+
+  // ---- Balans (soxta, faqat shu qurilmada) ----
+  var START = 1000;
+  var balance = START;
+  try { var s = parseFloat(localStorage.getItem('bal')); if (!isNaN(s)) balance = s; } catch (e) {}
+  function setBalance(v) {
+    balance = Math.round(v * 100) / 100;
+    document.getElementById('balance').textContent = balance.toFixed(2);
+    try { localStorage.setItem('bal', String(balance)); } catch (e) {}
+  }
+  setBalance(balance);
+  document.getElementById('reset').onclick = function () { setBalance(START); };
+
+  // ---- Dice ----
+  var EDGE = 98; // 2% house edge
+  var higher = true;
+  var target = document.getElementById('target');
+  var amount = document.getElementById('amount');
+
+  function chanceVal() { var t = +target.value; return higher ? 100 - t : t; }
+  function multVal() { return EDGE / chanceVal(); }
+
+  function refresh() {
+    var t = +target.value;
+    document.getElementById('targetVal').textContent = t;
+    document.getElementById('targetLabel').textContent = higher ? 'Son ≥' : 'Son <';
+    document.getElementById('chance').textContent = chanceVal() + '%';
+    document.getElementById('mult').textContent = multVal().toFixed(2) + 'x';
+    var red = 'var(--red)', green = 'var(--green)';
+    target.style.background = higher
+      ? 'linear-gradient(90deg,' + red + ' ' + t + '%,' + green + ' ' + t + '%)'
+      : 'linear-gradient(90deg,' + green + ' ' + t + '%,' + red + ' ' + t + '%)';
+  }
+  target.addEventListener('input', refresh);
+  document.getElementById('modeHigher').onclick = function () {
+    higher = true; this.classList.add('on'); document.getElementById('modeLower').classList.remove('on'); refresh();
+  };
+  document.getElementById('modeLower').onclick = function () {
+    higher = false; this.classList.add('on'); document.getElementById('modeHigher').classList.remove('on'); refresh();
+  };
+  document.getElementById('half').onclick = function () { amount.value = Math.max(1, Math.floor((+amount.value || 0) / 2 * 100) / 100); };
+  document.getElementById('double').onclick = function () { amount.value = Math.min(balance, (+amount.value || 0) * 2); };
+
+  // Tasodifiy son 0.00 - 99.99 (kriptografik)
+  function randomRoll() {
+    var a = new Uint32Array(1);
+    var limit = 4294960000; // 10000 ga bo'linadigan eng katta qiymat
+    do { crypto.getRandomValues(a); } while (a[0] >= limit);
+    return (a[0] % 10000) / 100;
+  }
+
+  var busy = false;
+  document.getElementById('play').onclick = function () {
+    if (busy) return;
+    var bet = Math.round((+amount.value) * 100) / 100;
+    var msg = document.getElementById('msg');
+    var rollEl = document.getElementById('roll');
+    if (!(bet >= 1)) { msg.textContent = 'Eng kam tikish: 1'; return; }
+    if (bet > balance) { msg.textContent = 'Balans yetarli emas'; return; }
+    busy = true; this.disabled = true;
+    setBalance(balance - bet);
+    rollEl.className = 'result';
+    msg.textContent = '...';
+
+    var result = randomRoll();
+    var t = +target.value;
+    var win = higher ? result >= t : result < t;
+    var n = 0;
+    var self = this;
+    var timer = setInterval(function () {
+      rollEl.textContent = (Math.random() * 99.99).toFixed(2);
+      if (++n >= 10) {
+        clearInterval(timer);
+        rollEl.textContent = result.toFixed(2);
+        if (win) {
+          var prize = bet * multVal();
+          setBalance(balance + prize);
+          rollEl.className = 'result win';
+          msg.textContent = 'Yutdingiz! +' + (prize - bet).toFixed(2);
+          haptic('success');
+        } else {
+          rollEl.className = 'result lose';
+          msg.textContent = 'Yutqazdingiz: -' + bet.toFixed(2);
+          haptic('error');
+        }
+        busy = false; self.disabled = false;
+      }
+    }, 50);
+  };
+
+  refresh();
+</script>
+</body>
+</html>
