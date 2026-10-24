@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Gift Game</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: #0f0f14; --surface: #1a1a22; --surface-2: #23232d; --border: #2e2e3a;
+    --primary: #a855f7; --primary-2: #7c6ff0; --blue: #1d9bf0; --green: #22c55e;
+    --orange: #f59e0b; --text: #fff; --dim: #8b8b9a; --radius: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; min-height: 100vh; padding-bottom: 80px; }
+
+  /* Yuqori panel */
+  .top { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border); display: grid; place-items: center; font-weight: 700; }
+  .bal { flex: 1; }
+  .bal small { color: var(--dim); font-size: 12px; display: block; }
+  .bal b { font-size: 20px; }
+  .btn { background: var(--primary-2); color: #fff; border: 0; padding: 10px 16px; border-radius: 12px; font-weight: 600; font-size: 14px; }
+
+  /* Sahifalar */
+  .page { display: none; padding: 16px; }
+  .page.active { display: block; }
+  h2 { margin-bottom: 12px; font-size: 18px; }
+
+  /* O'yin kartochkalari */
+  .card { border-radius: var(--radius); padding: 22px 18px; margin-bottom: 12px; font-size: 22px; font-weight: 800; display: flex; justify-content: space-between; align-items: center; }
+  .card span { font-size: 12px; font-weight: 600; background: rgba(0,0,0,.3); padding: 4px 10px; border-radius: 20px; }
+  .c1 { background: linear-gradient(135deg, #38bdf8, #6366f1); }
+  .c2 { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+  .c3 { background: linear-gradient(135deg, #7c3aed, #db2777); }
+  .box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; color: var(--dim); text-align: center; }
+
+  /* Pastki navigatsiya */
+  nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: var(--surface); border-top: 1px solid var(--border); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); z-index: 10; }
+  nav button { flex: 1; background: none; border: 0; color: var(--dim); font-size: 11px; padding: 8px 0; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  nav button i { font-style: normal; font-size: 20px; }
+  nav button.active { color: #fff; background: var(--primary-2); }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="avatar" id="avatar">D</div>
+  <div class="bal"><small>Balans (test)</small><b id="balance">1000.00</b></div>
+  <button class="btn">Depozit</button>
+</div>
+
+<div id="home" class="page active">
+  <h2 id="hello">Salom!</h2>
+  <div class="card c1">ROCKET <span>tez orada</span></div>
+  <div class="card c2">PVP <span>tez orada</span></div>
+  <div class="card c3">PLAY HUB <span>tez orada</span></div>
+</div>
+<div id="backpack" class="page"><h2>Backpack</h2><div class="box">Hozircha bo'sh</div></div>
+<div id="invite" class="page"><h2>Do'stlarni taklif qilish</h2><div class="box">Referal tizimi keyinroq</div></div>
+<div id="leaderboard" class="page"><h2>Reyting</h2><div class="box">Hozircha o'yinchilar yo'q</div></div>
+<div id="p2p" class="page"><h2>P2P</h2><div class="box">Takliflar yo'q</div></div>
+
+<nav>
+  <button data-p="backpack"><i>🎒</i>Backpack</button>
+  <button data-p="invite"><i>👥</i>Invite</button>
+  <button data-p="home" class="active"><i>🏠</i>Home</button>
+  <button data-p="leaderboard"><i>🏆</i>Reyting</button>
+  <button data-p="p2p"><i>🔁</i>P2P</button>
+</nav>
+
+<script>
+  // Telegram'ga ulanish
+  const tg = window.Telegram && window.Telegram.WebApp;
+  if (tg) {
+    tg.ready();
+    tg.expand();
+    tg.setHeaderColor('#1a1a22');
+    tg.setBackgroundColor('#0f0f14');
+    const u = tg.initDataUnsafe && tg.initDataUnsafe.user;
+    if (u) {
+      document.getElementById('hello').textContent = 'Salom, ' + u.first_name + '!';
+      document.getElementById('avatar').textContent = (u.first_name || 'D')[0].toUpperCase();
+    }
+  }
+
+  // Sahifalarni almashtirish
+  document.querySelectorAll('nav button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('.page').forEach(function (p) { p.classList.remove('active'); });
+      document.querySelectorAll('nav button').forEach(function (x) { x.classList.remove('active'); });
+      document.getElementById(b.dataset.p).classList.add('active');
+      b.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>
